@@ -1,0 +1,36 @@
+{
+  "name": "CaaS-connector-app",
+  "version": "0.0.1",
+  "description": "A simple connector app using NodeJS, Express, and DataStax's cassandra-driver",
+  "main": "server.js",
+  "scripts": {
+    "start": "wget -O apollo.zip https://cdn.glitch.com/9e0b6b14-ffae-4776-b616-9eb73c285ce7%2Fsecure-connect-glitch-test-west.zip?v=1567708556066 | nodemon --exec babel-node ./server.js",
+    "build": "babel src --out-dir dist",
+    "serve": "node dist/server.js"
+  },
+  "dependencies": {
+    "@babel/cli": "^7.6.0",
+    "@babel/core": "^7.6.0",
+    "@babel/node": "^7.6.0",
+    "@babel/preset-env": "^7.6.0",
+    "async": "^3.1.0",
+    "bluebird": "^3.5.5",
+    "cassandra-driver": "https://repo.datastax.com/datastax-public-releases-local/nodejs-driver/cassandra-driver-4.1.0-dbaas.1-44e542ae.tgz",
+    "express": "^4.16.4",
+    "nodemon": "^1.19.1",
+    "socket.io": "^2.2.0"
+  },
+  "engines": {
+    "node": "8.x"
+  },
+  "license": "MIT",
+  "keywords": [
+    "node",
+    "glitch",
+    "express",
+    "database",
+    "cassandra",
+    "apache cassandra",
+    "nosql"
+  ]
+}
