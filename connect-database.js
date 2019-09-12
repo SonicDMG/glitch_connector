@@ -15,7 +15,7 @@ let clientInstance = null;
  */
 module.exports.getCassandraClient = function () {
   if (clientInstance === null) {
-    throw new Error('No client instance found. Did you forget to call init_caas_connection OR init_connection?');
+    throw new Error('No client instance found. Did you forget to call initCaasConnection OR initDseConnection?');
   }
 
   return clientInstance;
@@ -29,17 +29,16 @@ module.exports.getCassandraClient = function () {
 async function establishConnection (client, type) {
   try {
     await client.connect();
-    console.info('Connected to %s successfully', type);
     clientInstance = client;
+    const numHosts = client.hosts.length;
+    const hostKeys = client.hosts.keys();
     
-    console.log('Connected to cluster with %d host(s): %j', client.hosts.length, client.hosts.keys());
+    console.log('Connected to cluster with %d host(s): %j', numHosts, hostKeys);
+    return 'Connected to ' + type + ' successfully with ' + numHosts + ' host(s) [' + hostKeys + ']';
 
     } catch (err) {
       console.error('There was an error when connecting to %s', type, err);
       await client.shutdown().then(() => { throw err; });
-
-    } finally {
-      //await connection.client.shutdown();
     }
 }
 
@@ -58,7 +57,7 @@ module.exports.initDseConnection = async function () {
     queryOptions: { consistency: cassandra.types.consistencies.local_quorum }
   });
   
-  await establishConnection(client, 'DataStax Enterprise');
+  return await establishConnection(client, 'DataStax Enterprise')
 };
 
 /**
@@ -84,5 +83,5 @@ module.exports.initCaasConnection = async function () {
     keyspace: process.env.KEYSPACE_NAME
   });
 
-  await establishConnection(client, 'Apollo');
+  return await establishConnection(client, 'Apollo')
 };
