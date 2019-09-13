@@ -38,6 +38,7 @@ async function establishConnection (client, type) {
 
     } catch (err) {
       console.error('There was an error when connecting to %s', type, err);
+      return 'NOT Connected to ' + type + '. Something went wrong, check the logs. '
       await client.shutdown().then(() => { throw err; });
     }
 }

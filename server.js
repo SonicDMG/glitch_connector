@@ -28,7 +28,7 @@ const dateOptions = {
 // table ids for reference later
 const dataStore = [{
     type: 'string', 
-    example: 'Initializing database'
+    example: '<span class="frontText">Initializing database</span>'
   }];
 
 /** 
@@ -43,7 +43,7 @@ connectDatabase.initCaasConnection()
     const elapsed = (hrtime[0] + (hrtime[1] / 1e9)).toFixed(3);
     console.info(`Completed in ${elapsed}s.`);
   
-    message = result + ' in ' + elapsed + 's';
+    const message = '<span class="frontText">' + result + ' in ' + elapsed + 's</span>';
     dataStore.push({type: 'string', example:message});
   })
   /**.then(() => {
@@ -81,7 +81,7 @@ app.get('/dreams', function(request, response) {
         const val = row['val']; // integer
         console.log('Retrieved row: %s, %s, %s, %d', id1, id2, txt, val);
 
-        const exampleRow = [txt + " @ " + id2];
+        const exampleRow = [txt + ' @ ' + id2];
         console.log('Example is %s', exampleRow);
 
       })
@@ -110,7 +110,10 @@ app.post("/dreams", function (request, response) {
     id2 = resultIds[1];
     
     const dateString = id2.getDate().toLocaleDateString("en-US", dateOptions);
-    const exampleRow = [dreamRequest + " @ " + dateString];
+    const exampleRow = [
+      '<span class="frontText">' + dreamRequest + '</span>' +
+      '<div class="dateText"><bold>@</bold>' + dateString + '</div>'
+    ];
     dataStore.push({type: 'data', id1: id1, id2: id2, txt: dreamRequest, example: exampleRow});
     let dataStoreSize = dataStore.length;
     
