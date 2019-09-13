@@ -1,65 +1,128 @@
 // server.js
 // where your node app starts
 
-/**
- * I decided to use babel because who doesn't like using "import" statements???
- * Check out this blog post for a quick tutorial on how to get this working.
- * https://hackernoon.com/using-babel-7-with-node-7e401bc28b04
- */
-
 // init project
-import express from 'express';
-import process from 'process';
-
-import database from './cassandra';
-import { init_caas_connection, init_dse_connection } from './connect-database';
-
+const express = require('express');
+const process = require('process');
 const app = express();
 
 // http://expressjs.com/en/starter/static-files.html
 app.use(express.static('public'));
 
-// http://expressjs.com/en/starter/basic-routing.html
-app.get('/', function(request, response) {
-  database.getMetadata()
-    .then(function(result) {
-      console.log('Metadata is %s', result);
-    
-    }, function(err) {
-      console.log('Error at /', err);
-    })
-  
-  response.sendFile(__dirname + '/views/index.html');
-});
+// reference files needed for our Cassandra database
+const database = require('./cassandra');
+const connectDatabase = require('./connect-database');
 
-app.get('/video', function(request, response) {
-  let video;
-  
-  database.getVideo()
-    .then(function(result) {
-      video = result;
-      console.log('Video is %s', video.name);
-      response.send(video.name);
-    
-    }, function(err) {
-      console.log('Error at /video', err);
-    })
-});
+const dateOptions = { 
+  weekday: 'long', 
+  year: 'numeric', 
+  month: 'long', 
+  day: 'numeric', 
+  hour: 'numeric', 
+  minute: 'numeric', 
+  second: 'numeric', 
+  timeZoneName: 'short' 
+};
 
-// listen for requests :)
-const listener = app.listen(process.env.PORT, function() {
-  console.log('Your app is listening on port ' + listener.address().port);
-});
+// Simple in-memory store to hold on to example
+// table ids for reference later
+const dataStore = [{
+    type: 'string', 
+    example: 'Initializing database'
+  }];
 
 /** 
  * Initialize the connection to our Apollo or DataStax Enterprise cluster
  * and display the elapsed time of initialization
  */
 const start = process.hrtime();
-init_caas_connection()
-//init_dse_connection()
+connectDatabase.initCaasConnection()
+//connectDatabase.initDseConnection()
+  .then(result => {
+    const hrtime = process.hrtime(start);
+    const elapsed = (hrtime[0] + (hrtime[1] / 1e9)).toFixed(3);
+    console.info(`Completed in ${elapsed}s.`);
+  
+    message = result + ' in ' + elapsed + 's';
+    dataStore.push({type: 'string', example:message});
+  })
+  /**.then(() => {
+    console.log('Creating example keyspace');
+    database.createKeyspace();
+  })*/
   .then(() => {
-      const hrtime = process.hrtime(start);
-      const elapsed = (hrtime[0] + (hrtime[1] / 1e9)).toFixed(3);
-      console.info(`Completed in ${elapsed}s.`);
-  });
+    console.log('Creating example table');
+    database.createTable();
+  })
+  .catch(err => console.error('Error at table initialization', err));
+
+
+/**
+ * Setup some basic routes
+ * http://expressjs.com/en/starter/basic-routing.html
+ */
+app.get('/', function(request, response) {  
+  response.sendFile(__dirname + '/views/index.html')
+});
+
+app.get('/dreams', function(request, response) {
+  const dataStoreSize = dataStore.length;
+  const last = dataStoreSize - 1;
+  console.debug('GET dreams are: %d', dataStoreSize);
+  
+  if (dataStoreSize > 0) {
+    if (dataStore[last].type == 'data') {
+      database.getExampleDataById1AndId2(dataStore[last].id1, dataStore[last].id2)
+      .then(example => {
+        const row = example.first();
+        const id1 = row['id1']; // Uuid
+        const id2 = row['id2'].getDate(); // pulls date from TimeUUID
+        const txt = row['txt']; // Text/String value
+        const val = row['val']; // integer
+        console.log('Retrieved row: %s, %s, %s, %d', id1, id2, txt, val);
+
+        const exampleRow = [txt + " @ " + id2];
+        console.log('Example is %s', exampleRow);
+
+      })
+      .catch(err => console.error('Error at /dreams GET', err));
+      
+    }
+    response.send(dataStore).reverse;
+
+  } else {
+    response.sendStatus(200);
+  }
+  
+});
+
+// could also use the POST body instead of query string: http://expressjs.com/en/api.html#req.body
+app.post("/dreams", function (request, response) {
+  console.log('POST request is: %s', request.query.dream);
+  
+  let dreamRequest = request.query.dream;
+  let id1; let id2;
+  
+  // Do insert here
+  database.insertData(dreamRequest)
+  .then(resultIds => {
+    id1 = resultIds[0];
+    id2 = resultIds[1];
+    
+    const dateString = id2.getDate().toLocaleDateString("en-US", dateOptions);
+    const exampleRow = [dreamRequest + " @ " + dateString];
+    dataStore.push({type: 'data', id1: id1, id2: id2, txt: dreamRequest, example: exampleRow});
+    let dataStoreSize = dataStore.length;
+    
+    console.debug('dataStore push is: ' + dataStore[dataStoreSize - 1].id1)
+    response.send(dataStore[dataStoreSize - 1]);
+    //response.sendStatus(200);
+  })
+  .catch(err => console.error('Error at /dreams POST', err));
+});
+
+
+// listen for requests :)
+const listener = app.listen(process.env.PORT, function() {
+  console.log('Your app is listening on port ' + listener.address().port);
+});

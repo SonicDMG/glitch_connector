@@ -1,42 +1,28 @@
 // client-side js
 // run by the browser each time your view template is loaded
 
-console.log('hello world :o');
+// by default, you've got jQuery,
+// add other scripts at the bottom of index.html
 
-// our default array of dreams
-const dreams = [
-  'Find and count some sheep',
-  'Climb a really tall mountain',
-  'Wash the dishes'
-];
+$(function() {
+  console.log('hello world :o');
+  
+  $.get('/dreams', function(dreams) {
+    if (dreams.length > 0) {
+      dreams.forEach(function(dream) {
+        $('<p></p>').text(dream.example).appendTo('div#dreams');
+      });
+    }
+  });
 
-// define variables that reference elements on our page
-const dreamsList = document.getElementById('dreams');
-const dreamsForm = document.forms[0];
-const dreamInput = dreamsForm.elements['dream'];
+  $('form').submit(function(event) {
+    //event.preventDefault();
+    var dream = $('input').val();
+    $.post('/dreams?' + $.param({dream: dream}), function(dreams) {
+      //$('<p></p>').text(dreams[dreams.length - 1].id1).appendTo('div#dreams');
+      $('input').val('');
+      $('input').focus();
+    });
+  });
 
-// a helper function that creates a list item for a given dream
-const appendNewDream = function(dream) {
-  const newListItem = document.createElement('li');
-  newListItem.innerHTML = dream;
-  dreamsList.appendChild(newListItem);
-}
-
-// iterate through every dream and add it to our page
-dreams.forEach( function(dream) {
-  appendNewDream(dream);
 });
-
-// listen for the form to be submitted and add a new dream when it is
-dreamsForm.onsubmit = function(event) {
-  // stop our form submission from refreshing the page
-  event.preventDefault();
-
-  // get dream value and add it to the list
-  dreams.push(dreamInput.value);
-  appendNewDream(dreamInput.value);
-
-  // reset form 
-  dreamInput.value = '';
-  dreamInput.focus();
-};
