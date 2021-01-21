@@ -10,7 +10,7 @@
   "dependencies": {
     "cassandra-driver": "https://repo.datastax.com/datastax-public-releases-local/nodejs-driver/cassandra-driver-4.1.0-dbaas.1-44e542ae.tgz",
     "express": "^4.16.4",
-    "socket.io": "^2.2.0"
+    "socket.io": "^2.4.0"
   },
   "engines": {
     "node": ">=10"
